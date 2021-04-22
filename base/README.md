@@ -1,52 +1,161 @@
-# EKS Quickstart Game-Server Sample
+# EKS Quickstart App Dev
 
-This repo contains an initial set of cluster components for deploying containerized game-server to be installed and
-configured by [eksctl](https://eksctl.io) through GitOps. It was build based on the GitOps [tutorial](https://eksctl.io/usage/experimental/gitops-flux/#creating-your-own-quick-start-profile)
+This repo contains an initial set of cluster components to be installed and
+configured by [eksctl](https://eksctl.io) through GitOps.
 
 ## Components
 
-- game server deployment with its rbac and reginal config map under [game-server](./game-server)
+- [AWS load balancer controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/) -- to easily expose services to the World.
 - [Cluster autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) -- to [automatically add/remove nodes](https://aws.amazon.com/premiumsupport/knowledge-center/eks-cluster-autoscaler-setup/) to/from your cluster based on its usage.
+  - The autoscaler is configured as [recommended in the AWS autoscaler docs](https://docs.aws.amazon.com/eks/latest/userguide/cluster-autoscaler.html#ca-deploy)
+  - See also [the autoscaler docs for the AWS provider](https://github.com/kubernetes/autoscaler/blob/f18b65a80c6f83b35cac057c136af14871552d3c/cluster-autoscaler/cloudprovider/aws/README.md)
 - [Prometheus](https://prometheus.io/) (its [Alertmanager](https://prometheus.io/docs/alerting/alertmanager/), its [operator](https://github.com/coreos/prometheus-operator), its [`node-exporter`](https://github.com/prometheus/node_exporter), [`kube-state-metrics`](https://github.com/kubernetes/kube-state-metrics), and [`metrics-server`](https://github.com/kubernetes-incubator/metrics-server)) -- for powerful metrics & alerts.
 - [Grafana](https://grafana.com) -- for a rich way to visualize metrics via dashboards you can create, explore, and share.
 - [Kubernetes dashboard](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/) -- Kubernetes' standard dashboard.
 - [Fluentd](https://www.fluentd.org/) & Amazon's [CloudWatch agent](https://aws.amazon.com/cloudwatch/) -- for cluster & containers' [log collection, aggregation & analytics in CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs.html).
+- [podinfo](https://github.com/stefanprodan/podinfo) --  a toy demo application.
 
 ## Pre-requisites
 
 A running EKS cluster with [IAM policies](https://eksctl.io/usage/iam-policies/) for:
 
-- The game-server deployment assumed an image is deployed to ECR. The game-server pipeline is defined in [containerized-game-servers](https://github.com/aws-samples/containerized-game-servers)
-- The game-server instance uses host-network:true so no ingress controller or LB is needed. 
-- The game-server pods need permisions to publish its status to an SQS queue
+- ALB ingress
 - auto-scaler
 - CloudWatch
 
-[Here](https://github.com/weaveworks/eksctl/blob/master/examples/eks-quickstart-app-dev.yaml) is a sample `ClusterConfig` manifest that shows how to enable these policies.
+These policies can be added to a nodegroup by including the following `iam` options in your nodegroup config:
 
-**N.B.**: policies are configured at node group level.
-Therefore, depending on your use-case, you may want to:
+```
+nodeGroups:
+  - iam:
+      withAddonPolicies:
+        albIngress: true
+        autoScaler: true
+        cloudWatch: true
+```
 
-- add these policies to all node groups,
+**N.B.**: policies are configured at the nodegroup level.
+Therefore, depending on your use case, you may want to:
+
+- add these policies to all nodegroups,
 - add [node selectors](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/) to the ALB ingress, auto-scaler and CloudWatch pods, so that they are deployed on the nodes configured with these policies.
-
-## How to deploy the template?
-
-- Populate the cluster name by replacing `{{.ClusterName}}`
-- Populate the region name by replacing `{{.Region}}` e.g. `us-west-2`
-- This example does not use Helm, hence `--with-helm=false`
-- The last argument is the profile/template repo, e.g., `git@github.com:yahavb/game-server-gitops-profile.git`
-- the `--git-url` is the destination git repo that the sys/devops will use to manage the cluster i.e. editing, adding, removing files to induce changes in the cluster. 
-
-```
-export EKSCTL_EXPERIMENTAL=true
-eksctl enable profile -r `{{.Region}}` --with-helm=false \
---git-url git@github.com:yahavb/weave-workshop.git \
---git-email email@me.com --cluster {{.ClusterName}} \
-git@github.com:aws-samples/amazon-eks-profile-for-gameserver.git
-```
 
 ## How to access workloads
 
-The game-server pod runs on the ephermal port range over UDP. It is required to configure a security group that allows the access to the game-servers port ranges. 
+For security reasons, this quickstart profile does not expose any workload publicly. However, should you want to access one of the workloads, various solutions are possible.
 
+### Port-forwarding
+
+You could port-forward into a pod, so that you (and _only_ you) could access it locally.
+
+For example, for `demo/podinfo`:
+
+- run:
+    ```console
+    kubectl --namespace demo port-forward service/podinfo 9898:9898
+    ```
+- go to http://localhost:9898
+
+### Ingress
+
+You could expose a service publicly, _at your own risks_, via ALB ingress.
+
+**N.B.**: the ALB ingress controller requires services:
+
+- to be of `NodePort` type,
+- to have the following annotations:
+    ```yaml
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internet-facing
+    ```
+
+#### `NodePort` services
+
+For any `NodePort` service:
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ${name}
+  namespace: ${namespace}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+  labels:
+    app: ${service-app-selector}
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: ${service-name}
+              servicePort: 80
+```
+
+A few minutes after deploying the above `Ingress` object, you should be able to see the public URL for the service:
+```console
+$ kubectl get ingress --namespace demo podinfo
+NAME      HOSTS   ADDRESS                                                                     PORTS   AGE
+podinfo   *       xxxxxxxx-${namespace}-${name}-xxxx-xxxxxxxxxx.${region}.elb.amazonaws.com   80      1s
+```
+
+#### `HelmRelease` objects
+
+For `HelmRelease` objects, you would have to configure `spec.values.service` and `spec.values.ingress`, e.g. for `demo/podinfo`:
+
+```yaml
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  name: podinfo
+  namespace: demo
+spec:
+  releaseName: podinfo
+  chart:
+    git: https://github.com/stefanprodan/podinfo
+    ref: 3.0.0
+    path: charts/podinfo
+  values:
+    service:
+      enabled: true
+      type: NodePort
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: alb
+        alb.ingress.kubernetes.io/scheme: internet-facing
+      path: /*
+```
+
+**N.B.**: the above `HelmRelease`
+
+- changes the type of `podinfo`'s service from its default value, `ClusterIP`, to `NodePort`,
+- adds the annotations required for the ALB ingress controller to expose the service, and
+- exposes all of `podinfo`'s URLs, so that all assets can be served over HTTP.
+
+A few minutes after deploying the above `HelmRelease` object, you should be able to see the following `Ingress` object, and the public URL for `podinfo`:
+
+```console
+$ kubectl get ingress --namespace demo podinfo
+NAME      HOSTS   ADDRESS                                                             PORTS   AGE
+podinfo   *       xxxxxxxx-demo-podinfo-xxxx-xxxxxxxxxx.${region}.elb.amazonaws.com   80      1s
+```
+
+## Securing your endpoints
+For a production-grade deployment, it's recommended to secure your endpoints with SSL. See [Ingress annotations for SSL](https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/ingress/annotation/#ssl).
+
+Any sensitive service that needs to be exposed must have some form of authentication. To add authentication to Grafana for e.g., see [Grafana configuration](https://github.com/helm/charts/tree/master/stable/prometheus-operator#grafana).
+To add authentication to other components, please consult their documentation.
+
+## Get in touch
+
+[Create an issue](https://github.com/weaveworks/eks-quickstart-app-dev/issues/new), or
+login to [Weave Community Slack (#eksctl)][slackchan] ([signup][slackjoin]).
+
+[slackjoin]: https://slack.weave.works/
+[slackchan]: https://weave-community.slack.com/messages/eksctl/
+
+Weaveworks follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md). Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting a Weaveworks project maintainer, or Alexis Richardson (alexis@weave.works).
