@@ -19,6 +19,8 @@ kind: Deployment
 metadata:
   labels:
     app: craft
+  annotations:
+    flux.weave.works/automated: "true"
   name: craft-mmo
 spec:
   replicas: 1
