@@ -14,12 +14,12 @@ spec:
   type: LoadBalancer
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: craft
-  name: craft-mmo
+  name: craft
 spec:
   replicas: 1
   template:
