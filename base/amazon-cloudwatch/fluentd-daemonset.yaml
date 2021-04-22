@@ -1,5 +1,5 @@
 ---
-apiVersion: apps/v1
+apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: fluentd-cloudwatch
@@ -7,9 +7,6 @@ metadata:
   labels:
     k8s-app: fluentd-cloudwatch
 spec:
-  selector:
-    matchLabels:
-      k8s-app: fluentd-cloudwatch
   template:
     metadata:
       labels:
@@ -36,7 +33,7 @@ spec:
           command: ['sh','-c','']
       containers:
         - name: fluentd-cloudwatch
-          image: fluent/fluentd-kubernetes-daemonset:v1.11.2-debian-cloudwatch-1.0
+          image: fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-cloudwatch-1.4
           env:
             - name: REGION
               valueFrom:
