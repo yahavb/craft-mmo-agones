@@ -22,6 +22,9 @@ metadata:
   name: craft
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: craft
   template:
     metadata:
       labels:
@@ -59,4 +62,4 @@ spec:
       volumes:
       - emptyDir: {}
         name: datadir
-      #hostNetwork: true
+      hostNetwork: true
