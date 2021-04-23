@@ -6,7 +6,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-type: nlb
 spec:
   selector:
-    app: craft
+    app: craft-north
   ports:
     - protocol: TCP
       port: 4080
@@ -17,18 +17,20 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    flux.weave.works/automated: "true"
   labels:
-    app: craft
-  name: craft
+    app: craft-north
+  name: craft-north
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: craft
+      app: craft-north
   template:
     metadata:
       labels:
-        app: craft
+        app: craft-north
     spec:
       nodeSelector:
         lifecycle: Ec2Spot
