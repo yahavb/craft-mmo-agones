@@ -61,4 +61,4 @@ spec:
           requests:
             cpu: 500m
             memory: 512Mi
-      #hostNetwork: true
+      hostNetwork: true
