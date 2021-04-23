@@ -62,4 +62,4 @@ spec:
       volumes:
       - emptyDir: {}
         name: datadir
-      hostNetwork: true
+      #hostNetwork: true
