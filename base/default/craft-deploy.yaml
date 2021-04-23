@@ -39,7 +39,7 @@ spec:
         - name: GAMESTATE
           value: "/game/state"
         - name: SERVERPORT
-          value: "14080"
+          value: "4080"
         image: 163538056407.dkr.ecr.us-west-2.amazonaws.com/craft:0.1
         imagePullPolicy: Always
         name: craft
