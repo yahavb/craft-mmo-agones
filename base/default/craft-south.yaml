@@ -36,14 +36,17 @@ spec:
         lifecycle: Ec2Spot
       containers:
       - env:
-        - name: GAMESTATE
-          value: "/game/state"
-        - name: SERVERPORT
-          value: "4080"
+        - name: SECRET_ARN
+          value: "arn:aws:secretsmanager:us-west-2:163538056407:secret:craft-login-HdmZgN"
+        - name: CLUSTER_ARN
+          value: "arn:aws:rds:us-west-2:163538056407:cluster:craft"
+        - name: DB_NAME
+          value: "craft"
+        - name: REGION
+          value: "us-west-2"
         image: 163538056407.dkr.ecr.us-west-2.amazonaws.com/craft:0.1
         imagePullPolicy: Always
         name: craft
-        command: ["python","/server.py"]
         readinessProbe:
           tcpSocket:
             port: 4080
@@ -58,10 +61,4 @@ spec:
           requests:
             cpu: 500m
             memory: 512Mi
-        volumeMounts:
-        - mountPath: /game
-          name: datadir
-      volumes:
-      - emptyDir: {}
-        name: datadir
       #hostNetwork: true
