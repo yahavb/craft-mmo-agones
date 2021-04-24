@@ -2,15 +2,20 @@ apiVersion: "agones.dev/v1"
 kind: Fleet
 metadata:
   name: craft-north
+  labels:
+    app: craft-north
 spec:
-  replicas: 2
+  replicas: 0
+#  selector:
+    #matchLabels:
+    #  app: craft-north
   strategy:
     type: Recreate
   template:
     spec:
       ports:
       - name: default
-        containerPort: 8080
+        containerPort: 4080
       health:
         initialDelaySeconds: 30
         periodSeconds: 60
