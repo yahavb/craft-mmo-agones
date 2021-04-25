@@ -23,7 +23,7 @@ metadata:
     app: craft-north
   name: craft-north
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: craft-north
