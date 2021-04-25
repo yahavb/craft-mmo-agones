@@ -5,10 +5,7 @@ metadata:
   labels:
     app: craft-north
 spec:
-  replicas: 0
-#  selector:
-    #matchLabels:
-    #  app: craft-north
+  replicas: 1
   strategy:
     type: Recreate
   template:
@@ -16,9 +13,11 @@ spec:
       ports:
       - name: default
         containerPort: 4080
+        protocol: TCP
       health:
-        initialDelaySeconds: 30
-        periodSeconds: 60
+        disabled: true
+        #initialDelaySeconds: 30
+        #periodSeconds: 60
       template:
         spec:
           containers:
