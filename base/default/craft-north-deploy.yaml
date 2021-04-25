@@ -44,7 +44,7 @@ spec:
           value: "craft"
         - name: REGION
           value: "us-west-2"
-        image: 163538056407.dkr.ecr.us-west-2.amazonaws.com/craft:0.2
+        image: 163538056407.dkr.ecr.us-west-2.amazonaws.com/craft:0.3
         imagePullPolicy: Always
         name: craft
         readinessProbe:
