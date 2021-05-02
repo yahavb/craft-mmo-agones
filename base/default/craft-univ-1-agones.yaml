@@ -23,8 +23,8 @@ spec:
           containers:
           - env:
             - name: SPAWN_POINT
-              #(forward,dont know,
-              value: "0, 10, 0, 0, 0"
+              #(forward,depth,,
+              value: "0, 0, 10, 0, 0"
             - name: SECRET_ARN
               value: "arn:aws:secretsmanager:us-west-2:163538056407:secret:craft-login-HdmZgN"
             - name: CLUSTER_ARN
