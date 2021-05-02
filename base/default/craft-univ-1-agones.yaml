@@ -1,11 +1,11 @@
 apiVersion: "agones.dev/v1"
 kind: Fleet
 metadata:
-  name: craft-north
+  name: craft-univ-1
   labels:
-    app: craft-north
+    app: craft-univ-1
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   template:
@@ -22,6 +22,8 @@ spec:
         spec:
           containers:
           - env:
+            - name: SPAWN_POINT
+              value: "(0, 0, 0, 0, 0)"
             - name: SECRET_ARN
               value: "arn:aws:secretsmanager:us-west-2:163538056407:secret:craft-login-HdmZgN"
             - name: CLUSTER_ARN
