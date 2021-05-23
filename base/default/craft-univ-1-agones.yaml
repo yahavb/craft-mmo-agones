@@ -5,7 +5,7 @@ metadata:
   labels:
     app: craft-univ-1
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: Recreate
   template:
@@ -37,3 +37,8 @@ spec:
             image: 163538056407.dkr.ecr.us-west-2.amazonaws.com/craft:0.16
             imagePullPolicy: Always
             name: craft
+            resources:
+              requests:
+               cpu: 500m
+               memory: 512Mi
+
