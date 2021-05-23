@@ -5,7 +5,7 @@ metadata:
   labels:
     app: craft-univ-1
 spec:
-  replicas: 2
+  replicas: 6
   strategy:
     type: Recreate
   template:
