@@ -25,7 +25,7 @@ spec:
           - env:
             - name: SPAWN_POINT
               #value: "0, 0, 100, 0, 0"
-              value: "0, 0, 0, 0, 0"
+              value: "10, 0, 0, 0, 0"
             - name: SECRET_ARN
               value: "arn:aws:secretsmanager:us-west-2:163538056407:secret:craft-login-HdmZgN"
             - name: CLUSTER_ARN
